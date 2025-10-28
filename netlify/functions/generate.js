@@ -2,85 +2,78 @@
 const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
 
 exports.handler = async function(event) {
-  // Only accept POST
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: JSON.stringify({ error: "Method not allowed" }) };
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
-
   try {
-    const body = JSON.parse(event.body || "{}");
-    const { secret, kind, targetName, senderName } = body;
+    const body = JSON.parse(event.body || '{}');
+    const { kind = 'poem', targetName = 'Shrabani', senderName = 'Tarunjit' } = body;
 
-    // Check a secret code to make page private (optional)
-    const REQUIRED_SECRET = process.env.SITE_SECRET || ""; // set in Netlify settings
-    if (REQUIRED_SECRET && secret !== REQUIRED_SECRET) {
-      return { statusCode: 401, body: JSON.stringify({ error: "Invalid secret code." }) };
-    }
-
-    // Validate API key is present in environment
     const GEMINI_KEY = process.env.GEMINI_API_KEY;
+    const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+
     if (!GEMINI_KEY) {
-      return { statusCode: 500, body: JSON.stringify({ error: "Server not configured (missing GEMINI_API_KEY)." }) };
+      return { statusCode: 500, body: JSON.stringify({ error: 'Server not configured (missing GEMINI_API_KEY).' }) };
     }
 
-    // Build a friendly prompt
-    let prompt;
-    if (kind === 'compliment') {
-      prompt = `Write a short, sweet compliment message for ${targetName}. Keep it romantic but tasteful. Signed: ${senderName}.`;
+    // Compose prompt: ensure reply is in Bengali (Bangla script)
+    let promptBase = '';
+    if (kind === 'shayari') {
+      promptBase = `Write a short romantic Bengali shayari (in Bangla script) dedicated to ${targetName}. Keep it poetic, emotional, and original. End with a one-line signoff: "From ${senderName}".`;
+    } else if (kind === 'message') {
+      promptBase = `Write a short heartfelt Bengali love message (in Bangla script) to ${targetName}. Keep it warm and sincere. Signed: ${senderName}.`;
     } else {
       // poem
-      prompt = `Write a short romantic poem dedicated to ${targetName}. Make it sweet, poetic, and original. At the end add one-line sign off: "From ${senderName}".`;
+      promptBase = `Write a romantic Bengali poem (in Bangla script) for ${targetName}. Make it dreamy and expressive. Sign off with "From ${senderName}".`;
     }
 
-    // Gemini REST endpoint (use model that your API key supports; gemini-2.5-flash is common)
-    const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
     const payload = {
+      // contents: a list of messages / user input
       contents: [
-        {
-          role: "user",
-          parts: [{ text: prompt }]
-        }
+        { role: "user", parts: [{ text: promptBase }] }
       ],
-      // you can tune other params here
+      temperature: 0.8,
+      maxOutputTokens: 512
     };
 
     const resp = await fetch(url, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": GEMINI_KEY
+        'Content-Type': 'application/json',
+        'x-goog-api-key': GEMINI_KEY
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
 
     const json = await resp.json();
     if (!resp.ok) {
-      return { statusCode: resp.status, body: JSON.stringify({ error: json || "Gemini API error" }) };
+      console.error('Gemini error:', JSON.stringify(json));
+      return { statusCode: resp.status, body: JSON.stringify({ error: json }) };
     }
 
-    // Try to safely extract text from response shape
+    // Extract text robustly from API response
     let message = "";
-    if (json?.candidates && Array.isArray(json.candidates) && json.candidates.length > 0) {
-      message = json.candidates.map(c => c.content?.[0]?.text || c.text || "").join("\n\n");
-    } else if (json?.output && json.output[0] && json.output[0].content) {
-      // fallback structure
-      message = json.output.map(o => (o.content || []).map(c => c.parts?.map(p=>p.text).join("") ).join("")).join("\n\n");
+    if (json?.candidates && json.candidates.length) {
+      message = json.candidates.map(c => {
+        if (c?.content && c.content.length) {
+          return c.content.map(p => p.parts?.map(t => t.text).join('')).join('');
+        }
+        if (c.text) return c.text;
+        return '';
+      }).join("\n\n");
+    } else if (json?.output && Array.isArray(json.output)) {
+      message = json.output.map(o => (o.content || []).map(c => (c.parts || []).map(p => p.text).join('')).join('')).join('\n\n');
     } else if (json?.generatedText) {
       message = json.generatedText;
     } else {
-      // last fallback
       message = JSON.stringify(json).slice(0, 2000);
     }
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ message })
-    };
-
+    return { statusCode: 200, body: JSON.stringify({ message }) };
   } catch (err) {
-    console.error("Function error:", err);
-    return { statusCode: 500, body: JSON.stringify({ error: "Internal server error." }) };
+    console.error('Function error:', err);
+    return { statusCode: 500, body: JSON.stringify({ error: 'Internal server error.' }) };
   }
 };
