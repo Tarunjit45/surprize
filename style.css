@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+body {
+  margin: 0;
+  height: 100vh;
+  background: radial-gradient(circle, #ffd1dc, #ffb6c1, #ff9aa2);
+  overflow: hidden;
+  font-family: 'Poppins', sans-serif;
+  text-align: center;
+}
+
+.heart-bg {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: -1;
+}
+
+.heart-bg::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: url('https://i.ibb.co/Zx3yLj3/hearts.gif') center/cover no-repeat;
+  opacity: 0.25;
+}
+
+.container {
+  padding-top: 120px;
+  color: #fff;
+  text-shadow: 0 0 15px #ff0055;
+}
+
+.glow-text {
+  font-size: 40px;
+  animation: glow 2s infinite alternate;
+}
+
+.subtitle {
+  font-size: 20px;
+  margin-bottom: 40px;
+  color: #ffe4e1;
+}
+
+.btn-box button {
+  margin: 15px;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 30px;
+  background-color: #ff4081;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 15px rgba(255, 64, 129, 0.7);
+}
+
+.btn-box button:hover {
+  transform: scale(1.1);
+  background-color: #ff77a9;
+}
+
+.popup {
+  background: white;
+  color: #ff007f;
+  border-radius: 20px;
+  box-shadow: 0 0 20px rgba(255, 0, 120, 0.6);
+  width: 80%;
+  max-width: 500px;
+  margin: 40px auto;
+  padding: 25px;
+  animation: popIn 0.6s ease;
+}
+
+.popup button {
+  margin-top: 10px;
+  background-color: #ff4081;
+  border: none;
+  padding: 10px 20px;
+  color: white;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.hidden {
+  display: none;
+}
+
+@keyframes glow {
+  from { text-shadow: 0 0 10px #ff0055; }
+  to { text-shadow: 0 0 30px #ff66a3; }
+}
+
+@keyframes popIn {
+  from { transform: scale(0.7); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
