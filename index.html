@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>For Shrabani 💖</title>
+  <style>
+    :root{
+      --bg1:#ffdee9; --bg2:#b5ffd9;
+      --card:#fff; --accent:#ff7aa2;
+      --glass: rgba(255,255,255,0.6);
+      --text:#2b2b2b;
+    }
+    html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial;}
+    body{
+      background: linear-gradient(135deg,var(--bg1),var(--bg2));
+      display:flex;align-items:center;justify-content:center;padding:24px;
+    }
+    .card{
+      width:100%;max-width:760px;background:linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.85));
+      border-radius:18px; box-shadow: 0 10px 30px rgba(0,0,0,0.12); padding:28px;
+      backdrop-filter: blur(6px);
+    }
+    h1{margin:0;font-size:28px;color:var(--accent);letter-spacing:0.3px}
+    .sub{color:var(--text);margin-top:8px}
+    .name{font-size:22px;margin:14px 0;color:#b02e6b;font-weight:700}
+    .welcome{font-size:16px;margin-bottom:18px}
+    .btn{
+      display:inline-flex;gap:10px;align-items:center;padding:12px 18px;border-radius:10px;
+      background:linear-gradient(90deg,var(--accent),#ff4d88); color:white; border:0; cursor:pointer;
+      font-weight:600; box-shadow: 0 6px 18px rgba(255,122,162,0.28);
+    }
+    .btn:disabled{opacity:.6;cursor:default}
+    .controls{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+    .output{
+      margin-top:18px;padding:16px;border-radius:12px;background:var(--glass); color:var(--text);
+      min-height:120px;white-space:pre-wrap;font-size:15px;line-height:1.5;
+    }
+    .small{font-size:13px;color:#555;margin-top:8px}
+    .secret-input{padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.08);width:220px}
+    footer{margin-top:18px;color:#6b6b6b;font-size:13px;text-align:center}
+    .heart{display:inline-block;transform:translateY(2px);filter:drop-shadow(0 2px 6px rgba(0,0,0,0.12))}
+  </style>
+</head>
+<body>
+  <div class="card" role="main" aria-labelledby="title">
+    <h1 id="title">Hey Shrabani 💖</h1>
+    <div class="welcome">This isn’t just a website… it’s a piece of my heart coded for you.</div>
+    <div class="name">A little surprise — made just for you ✨</div>
+    <div class="small">Enter the secret code I gave you (keeps it private) and click <strong>Reveal Secret</strong>.</div>
+
+    <div class="controls">
+      <input id="secret" class="secret-input" placeholder="Enter secret code" />
+      <button id="revealBtn" class="btn">Reveal Secret Message 💌</button>
+      <button id="surpriseBtn" class="btn" style="background:linear-gradient(90deg,#8e6bff,#ff8eb0)">Another Poem 🌷</button>
+    </div>
+
+    <div id="output" class="output">Click the button to get a poem written just for you ❤️</div>
+
+    <footer>Made with 💖 by Tarunjit — only for Shrabani</footer>
+  </div>
+
+<script>
+  const revealBtn = document.getElementById('revealBtn');
+  const surpriseBtn = document.getElementById('surpriseBtn');
+  const output = document.getElementById('output');
+
+  // set to true if you want to require secret (recommended)
+  const REQUIRE_SECRET = true;
+
+  async function callBackend(kind='poem'){
+    const secretVal = document.getElementById('secret').value || '';
+    if (REQUIRE_SECRET && !secretVal.trim()){
+      output.innerText = "Please enter the secret code first ✨";
+      return;
+    }
+    revealBtn.disabled = true;
+    surpriseBtn.disabled = true;
+    output.innerText = "Thinking of the perfect words... 💭";
+
+    try {
+      const res = await fetch('/.netlify/functions/generate', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          secret: secretVal,
+          kind: kind,
+          targetName: "Shrabani Dev",
+          senderName: "Tarunjit"
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        output.innerText = data?.error || ("Server error: " + res.status);
+      } else {
+        output.innerText = data.message || "No message returned.";
+      }
+    } catch (err){
+      console.error(err);
+      output.innerText = "Network error. Try again later.";
+    } finally {
+      revealBtn.disabled = false;
+      surpriseBtn.disabled = false;
+    }
+  }
+
+  revealBtn.addEventListener('click', ()=> callBackend('poem'));
+  surpriseBtn.addEventListener('click', ()=> callBackend('compliment'));
+</script>
+</body>
+</html>
