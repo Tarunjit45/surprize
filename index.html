@@ -1,34 +1,50 @@
-<!DOCTYPE html>
-<html lang="bn">
+<!doctype html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>For Shrabani 💖</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&family=Great+Vibes&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <audio autoplay loop>
-    <source src="https://cdn.pixabay.com/download/audio/2021/11/08/audio_8e48b4c221.mp3" type="audio/mpeg">
-  </audio>
+  <canvas id="bgCanvas"></canvas>
 
-  <div class="heart-bg"></div>
+  <main class="card" role="main" aria-labelledby="title">
+    <header class="header">
+      <h1 id="title"><span class="script">Hey</span> <span class="name">Shrabani 💖</span></h1>
+      <p class="lead">This was made just for you — a small piece of my heart, coded with care.</p>
+    </header>
 
-  <div class="container">
-    <h1 class="glow-text">Hey Shrabani 💕</h1>
-    <p class="subtitle">I built this only for you... 💫</p>
+    <section class="controls">
+      <div class="buttons">
+        <button class="btn primary" data-kind="shayari">✨ Reveal a Shayari</button>
+        <button class="btn accent" data-kind="poem">💌 Reveal a Poem</button>
+        <button class="btn soft" data-kind="message">💭 Reveal a Message</button>
+      </div>
 
-    <div class="btn-box">
-      <button onclick="generate('shayari')">✨ Reveal a Shayari</button>
-      <button onclick="generate('poem')">💌 Reveal a Poem</button>
-      <button onclick="generate('message')">💭 Reveal a Message</button>
-    </div>
+      <div class="hint">Click any button — the message will appear below in Bengali.</div>
+    </section>
 
-    <div id="popup" class="popup hidden">
-      <p id="resultText"></p>
-      <button onclick="closePopup()">Close 💖</button>
-    </div>
-  </div>
+    <section id="resultWrap" class="result-wrap hidden" aria-live="polite">
+      <div id="resultCard" class="result-card">
+        <div id="typewriter" class="typewriter"></div>
+        <div class="actions">
+          <button id="another" class="small-btn">Another ✨</button>
+          <button id="save" class="small-btn outline">Save</button>
+        </div>
+      </div>
+    </section>
 
+    <footer class="footer">Made with ❤️ by Tarunjit • Only for Shrabani</footer>
+  </main>
+
+  <!-- Confetti library (lightweight) -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
+
