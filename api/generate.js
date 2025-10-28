@@ -1,4 +1,4 @@
-// api/generate.js
+// api/generate.js — for Vercel
 import fetch from "node-fetch";
 
 export default async function handler(req, res) {
@@ -7,16 +7,11 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { kind = "poem", targetName = "Shrabani", senderName = "Tarunjit" } = req.body || {};
-
+    const { kind = "poem", targetName = "Shrabani", senderName = "Tarunjit" } = req.body;
     const GEMINI_KEY = process.env.GEMINI_API_KEY;
     const MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
 
-    if (!GEMINI_KEY) {
-      return res.status(500).json({ error: "Missing GEMINI_API_KEY in environment variables." });
-    }
-
-    // 🔮 Bengali prompt creation
+    // 🪄 Build prompt dynamically in Bengali
     let promptBase = "";
     if (kind === "shayari") {
       promptBase = `একটি রোমান্টিক বাংলা শায়ারি লেখো ${targetName}-এর জন্য, যা আবেগপূর্ণ এবং একদম ইউনিক হবে। শেষ লাইনে লিখো — "From ${senderName}".`;
@@ -26,56 +21,73 @@ export default async function handler(req, res) {
       promptBase = `একটি সুন্দর রোমান্টিক বাংলা কবিতা লেখো ${targetName}-এর জন্য। এটি স্বপ্নময় ও মিষ্টি হোক। শেষ লাইনে লিখো — "From ${senderName}".`;
     }
 
-    // 🔗 Gemini API endpoint (v1beta)
+    // 🌐 Call Gemini API
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
     const payload = {
-      contents: [
-        { role: "user", parts: [{ text: promptBase }] }
-      ],
+      contents: [{ role: "user", parts: [{ text: promptBase }] }],
       temperature: 0.8,
-      maxOutputTokens: 512
+      maxOutputTokens: 512,
     };
 
-    const response = await fetch(url, {
+    const resp = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-goog-api-key": GEMINI_KEY
+        "x-goog-api-key": GEMINI_KEY,
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
 
-    const json = await response.json();
-
-    if (!response.ok) {
-      console.error("Gemini error:", json);
-      return res.status(response.status).json({ error: json });
+    if (!resp.ok) {
+      console.error("Gemini API error:", resp.status);
+      throw new Error("Gemini API failed");
     }
 
-    // ✨ Extract message text properly
+    const json = await resp.json();
+
     let message = "";
-    if (json?.candidates && json.candidates.length > 0) {
-      message = json.candidates
-        .map(c => {
-          if (c?.content?.parts) {
-            return c.content.parts.map(p => p.text || "").join("");
-          }
-          if (c?.content && Array.isArray(c.content)) {
-            return c.content
-              .map(p => (p.parts || []).map(t => t.text).join(""))
-              .join("");
-          }
-          return "";
-        })
-        .join("\n\n");
-    } else {
-      message = json?.text || "No response received.";
+    if (json?.candidates?.length) {
+      message =
+        json.candidates[0]?.content?.parts?.[0]?.text ||
+        json.candidates[0]?.output_text ||
+        "💔";
     }
+
+    if (!message || message === "💔") throw new Error("Empty message");
 
     return res.status(200).json({ message });
   } catch (err) {
-    console.error("Server Error:", err);
-    return res.status(500).json({ error: "Internal server error." });
+    console.error("⚠️ Fallback mode activated:", err.message);
+
+    const { kind, targetName, senderName } = req.body;
+
+    // 💖 Multiple fallback options
+    const fallbackData = {
+      shayari: [
+        `💻 কোডের মতোই তোমায় ভালোবাসা,\nSyntax error নেই, কেবল নিখুঁত ভাষা।\nIf (heart == yours) {\n   return "Forever";\n}\nFrom ${senderName} ❤️`,
+        `🧠 আমার কোডে যত if-else আছে, সবই ${targetName}-এর জন্য truth return করে। 💘\n— From ${senderName}`,
+        `⚙️ ${targetName}, তুমি আমার কোডের সেই perfect algorithm,\nযা execute হলে আমার পুরো world optimize হয়ে যায়। 😍\n— From ${senderName}`,
+        `💾 যতই ডিবাগ করি, একটাই error পাই —\n“Missing ${targetName} in my life.” 💔\n— From ${senderName}`,
+      ],
+      message: [
+        `👩‍💻 ${targetName}, তুমি আমার কোডের সেই missing semicolon,\nযাকে ছাড়া সব কিছু incomplete লাগে।\nতোমায় পেলে পুরো কোডটাই চলে perfect run-এ। ❤️\n— ${senderName}`,
+        `🖥️ ${targetName}, তুমি আমার CPU-এর সেই core,\nযা ছাড়া কোনো process complete হয় না। 💓\n— ${senderName}`,
+        `⌨️ ভালোবাসা যদি একটা function হত, তাহলে আমি লিখতাম — love(${targetName}); ❤️\n— ${senderName}`,
+        `🧡 তোমার হাসিটা যেন console.log("happiness"); — একবার দেখলেই পুরো সিস্টেম fresh হয়ে যায়!\n— ${senderName}`,
+      ],
+      poem: [
+        `🧠 সফটওয়্যারের মতোই তুমি, ${targetName} —\nতোমার হাসিতে আমি crash হয়ে যাই।\nতোমার চোখ দুটো debug করতে করতে,\nআমার পুরো logic lost হয়ে যায়!\n— From ${senderName} 💖`,
+        `💻 আমি কোড লিখি রাত জেগে,\nতবু তোমার নামটাই আসে প্রতিটি loop-এ।\nতুমি আমার dream function,\nreturn love(${senderName}) ❤️\n— ${senderName}`,
+        `🌙 তোমার চোখে তারার আলো,\nতোমার কণ্ঠে মিষ্টি bug-free কোডের ভালোবাসা।\nআমি compile করি তোমার নাম, ${targetName}, প্রতিদিন নতুন version-এ। 💕\n— From ${senderName}`,
+        `⚡ তোমার presence মানে high-speed network,\nতোমার অনুপস্থিতি মানে server down।\nতুমি ছাড়া সব error, শুধু তুমি fix করো আমার life। 💻❤️\n— From ${senderName}`,
+      ],
+    };
+
+    // 🎲 Pick a random fallback message
+    const responses = fallbackData[kind] || ["💔 সার্ভার ঘুমাচ্ছে, কিন্তু আমার ভালোবাসা জেগে আছে তোমার জন্য। — From Dev ❤️"];
+    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+
+    return res.status(200).json({ message: randomResponse });
   }
 }
